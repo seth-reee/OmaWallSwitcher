@@ -5,6 +5,8 @@ use a different wallpaper on each monitor, and change fitting without abrupt jum
 Wallpaper and fitting changes use Omarchy's center-out slanted reveal, with the old
 image kept visible until its replacement is ready.
 
+![OmaWallSwitcher controls with wallpaper fitting, pause, and next buttons](assets/screenshot.png)
+
 ## Features
 
 - Automatic rotation every 1–1440 minutes, with pause/resume and manual advance.
