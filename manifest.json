@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "seth.wallpaper-slideshow",
+  "name": "OmaWallSwitcher",
+  "version": "1.0.0",
+  "author": "Seth",
+  "description": "A lightweight folder slideshow with smooth wallpaper and fitting transitions.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "SlideshowWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "OmaWallSwitcher",
+    "description": "Next wallpaper, folder selection, and pause",
+    "category": "System",
+    "allowMultiple": false
+  }
+}
