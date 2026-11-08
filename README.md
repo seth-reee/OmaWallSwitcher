@@ -5,7 +5,7 @@ use a different wallpaper on each monitor, and change fitting without abrupt jum
 Wallpaper and fitting changes use Omarchy's center-out slanted reveal, with the old
 image kept visible until its replacement is ready.
 
-![OmaWallSwitcher controls with wallpaper fitting, pause, and next buttons](assets/screenshot.png)
+![OmaWallSwitcher controls with wallpaper fitting, pause, and next buttons](preview.png)
 
 ## Features
 
@@ -48,6 +48,32 @@ omarchy restart shell
 ```
 
 The plugin ID remains `seth.wallpaper-slideshow` for compatibility with existing installs.
+
+## Update or remove
+
+Update a git-managed installation:
+
+```sh
+omarchy plugin update seth.wallpaper-slideshow
+omarchy restart shell
+```
+
+Disable the slideshow to reveal the normal Omarchy wallpaper:
+
+```sh
+omarchy plugin disable seth.wallpaper-slideshow
+```
+
+Remove the plugin:
+
+```sh
+omarchy plugin remove seth.wallpaper-slideshow
+```
+
+Your image folder is never modified. The saved preferences in
+`~/.config/omarchy/wallpaper-slideshow.json` can be removed separately if desired.
+Installation and removal use Omarchy's plugin commands; no custom install scripts
+or privileged commands are required.
 
 ## Controls
 
