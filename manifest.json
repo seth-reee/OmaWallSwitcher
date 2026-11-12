@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "seth.wallpaper-slideshow",
   "name": "OmaWallSwitcher",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Seth",
   "description": "A lightweight folder slideshow with smooth wallpaper and fitting transitions.",
   "kinds": [
