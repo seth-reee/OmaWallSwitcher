@@ -14,6 +14,7 @@ Item {
     property int loading: -1
     property string requestedPath: ""
     property string requestedFit: "normal"
+    property string displayedPath: ""
     readonly property var buffers: [first, second]
     signal loadFailed(string path)
 
@@ -23,6 +24,7 @@ Item {
         if (!path) {
             loading = -1
             front = -1
+            displayedPath = ""
             first.source = ""
             second.source = ""
             return
@@ -76,6 +78,7 @@ Item {
         onFinished: {
             var previous = root.front
             root.front = root.loading
+            root.displayedPath = root.requestedPath
             root.loading = -1
             root.buffers[root.front].z = 0
             if (previous >= 0) {

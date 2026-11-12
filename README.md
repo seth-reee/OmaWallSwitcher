@@ -163,3 +163,36 @@ MIT; see [LICENSE](LICENSE). The reveal geometry and theme-selector integration 
 adapted from [Omarchy](https://github.com/basecamp/omarchy). The project was informed
 by [Omawall](https://github.com/matjam/omawall) and
 [wallpaper-omarchy-manager](https://github.com/guiestrela/wallpaper-omarchy-manager).
+
+### Optional Lock Explorer wallpapers
+
+For [Lock Explorer](https://github.com/SirJul1337/omarchy-lock-explorer), install
+our optional compatibility bridge once:
+
+```sh
+python3 integrations/lock-explorer.py
+```
+
+Then enable **Lock Explorer wallpapers** in the OmaWallSwitcher popup, or run:
+
+```sh
+omarchy-shell wallpaper-slideshow setLockScreenSupport true
+```
+
+Off by default. Each lock surface and its unlock fade use that monitor's last
+successfully displayed slideshow image. Lock Explorer retains its own crop,
+blur, and dim settings; slideshow fitting modes do not carry over. Designs
+without a wallpaper stay as designed. Explorer thumbnails retain the theme
+wallpaper; the full-screen preview uses its monitor's slideshow image.
+
+The bridge reads only a small JSON file in `XDG_RUNTIME_DIR`, keyed by monitor
+name. It falls back to the theme wallpaper when disabled, missing a monitor,
+or when the slideshow stops refreshing its state for 90 seconds. No global
+wallpaper link or authentication behavior is changed. This does not replace
+the stock desktop background service.
+
+The installer backs up Lock Explorer's `Service.qml` as
+`Service.qml.before-omawallswitcher` and rejects layouts it does not recognize.
+A Lock Explorer update can overwrite the patch: inspect/remove the old backup
+and reapply the installer after updating. To undo, disable the setting and
+restore that backup if it still matches your installed Lock Explorer version.

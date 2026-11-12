@@ -103,6 +103,15 @@ Ui.BarWidget {
                 }
             }
             Row {
+                Ui.Button {
+                    text: "Lock Explorer wallpapers"
+                    foreground: root.bar.foreground
+                    bordered: true
+                    selected: root.service?.lockScreenSupport || false
+                    onClicked: root.service?.setLockScreenSupport(!root.service.lockScreenSupport)
+                }
+            }
+            Row {
                 spacing: Style.space(8)
                 Ui.Button {
                     text: root.service?.paused ? "Resume" : "Pause"

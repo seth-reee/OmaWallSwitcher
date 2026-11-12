@@ -16,6 +16,16 @@ spec.loader.exec_module(slideshow)
 
 
 class SlideshowTests(unittest.TestCase):
+    def test_lock_screen_setting_is_explicit_and_preserves_config(self):
+        slideshow.save({'folder': '/wallpapers', 'paused': True})
+        self.run_action('lock-screen', '--enabled', 'true')
+        self.assertTrue(slideshow.load()['lockScreenSupport'])
+        self.assertEqual(slideshow.load()['folder'], '/wallpapers')
+        self.run_action('lock-screen', '--enabled', 'false')
+        self.assertFalse(slideshow.load()['lockScreenSupport'])
+        with self.assertRaises(ValueError):
+            self.run_action('lock-screen')
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)

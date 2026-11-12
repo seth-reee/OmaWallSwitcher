@@ -55,7 +55,8 @@ def dialog(*args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['configure', 'next', 'toggle', 'fit'])
+    parser.add_argument('action', choices=['configure', 'next', 'toggle', 'fit', 'lock-screen'])
+    parser.add_argument('--enabled', choices=['true', 'false'])
     parser.add_argument('--fit', choices=FIT_MODES)
     parser.add_argument('--folder')
     parser.add_argument('--minutes', type=int)
@@ -82,6 +83,11 @@ def main():
         if not 1 <= minutes <= 1440:
             raise ValueError('Interval must be between 1 and 1440 minutes.')
         config.update({'folder': str(Path(folder).expanduser().resolve()), 'minutes': minutes, 'paused': False})
+        save(config)
+    elif args.action == 'lock-screen':
+        if args.enabled is None:
+            raise ValueError('Choose true or false with --enabled.')
+        config['lockScreenSupport'] = args.enabled == 'true'
         save(config)
     elif args.action == 'fit':
         if args.fit is None:

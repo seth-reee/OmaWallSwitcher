@@ -10,6 +10,46 @@ Item {
     property string folder: ""
     property int minutes: 5
     property bool paused: false
+    property bool lockScreenSupport: false
+    property var displayedWallpapers: ({})
+    function publishLockWallpapers() {
+        var monitors = {}
+        if (lockScreenSupport && folder) {
+            for (var screen of Quickshell.screens) {
+                if (displayedWallpapers[screen.name]) monitors[screen.name] = displayedWallpapers[screen.name]
+            }
+        }
+        lockWallpapers.setText(JSON.stringify({version: 1, updated: Date.now(), monitors: monitors}))
+    }
+    onDisplayedWallpapersChanged: publishLockWallpapers()
+    onLockScreenSupportChanged: publishLockWallpapers()
+    onFolderChanged: publishLockWallpapers()
+    FileView {
+        id: lockWallpapers
+        path: Quickshell.env("XDG_RUNTIME_DIR") + "/omawallswitcher-lock-wallpapers.json"
+        atomicWrites: true
+        printErrors: false
+    }
+    Timer {
+        interval: 30000
+        repeat: true
+        running: root.lockScreenSupport && root.folder !== ""
+        onTriggered: root.publishLockWallpapers()
+    }
+    function wallpaperForScreen(name) {
+        if (!lockScreenSupport || !folder) return ""
+        return displayedWallpapers[name] || ""
+    }
+    function setLockScreenSupport(enabled) {
+        if (control.running) return
+        control.command = ["python3", helper, "lock-screen", "--enabled", enabled ? "true" : "false"]
+        control.running = true
+    }
+    function rememberWallpaper(name, path) {
+        var updated = Object.assign({}, displayedWallpapers)
+        updated[name] = path
+        displayedWallpapers = updated
+    }
     property string fit: "normal"
     property var wallpapers: []
     property int count: 0
@@ -58,6 +98,7 @@ Item {
                 root.folder = String(data.folder || "")
                 root.minutes = Math.max(1, Math.min(1440, Number(data.minutes) || 5))
                 root.paused = data.paused === true
+                root.lockScreenSupport = data.lockScreenSupport === true
                 root.fit = ["normal", "vertical", "horizontal", "stretch"].indexOf(data.fit) >= 0 ? data.fit : "normal"
                 root.error = ""
                 if (changed && root.folder) Qt.callLater(root.next)
@@ -113,6 +154,7 @@ Item {
                 fit: root.fit
                 path: wallpaper
                 pixelRatio: modelData.devicePixelRatio
+                onDisplayedPathChanged: root.rememberWallpaper(modelData.name, displayedPath)
                 onLoadFailed: function(path) { root.error = "Could not load wallpaper: " + path }
             }
             MouseArea {
@@ -132,6 +174,7 @@ Item {
         function next(): void { root.next() }
         function configure(): void { root.configure() }
         function toggle(): void { root.toggle() }
+        function setLockScreenSupport(enabled: bool): void { root.setLockScreenSupport(enabled) }
         function status(): string {
             return JSON.stringify({folder: root.folder, minutes: root.minutes, paused: root.paused,
                                    fit: root.fit, wallpapers: root.wallpapers, count: root.count, error: root.error})
