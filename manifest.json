@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "seth.wallpaper-slideshow",
   "name": "OmaWallSwitcher",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Seth",
-  "description": "A lightweight folder slideshow with smooth wallpaper and fitting transitions.",
+  "description": "Wallpaper slideshows with a system folder picker, editable intervals, per-monitor images, and smooth fitting transitions.",
   "kinds": [
     "service",
     "bar-widget"
@@ -15,7 +15,7 @@
   },
   "barWidget": {
     "displayName": "OmaWallSwitcher",
-    "description": "Next wallpaper, folder selection, and pause",
+    "description": "System folder picker, editable slideshow interval, fitting controls, and pause",
     "category": "System",
     "allowMultiple": false
   }

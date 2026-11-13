@@ -79,6 +79,11 @@ Item {
         control.command = ["python3", helper, "configure"]
         control.running = true
     }
+    function setMinutes(value) {
+        if (control.running) return
+        control.command = ["python3", helper, "interval", "--minutes", String(value)]
+        control.running = true
+    }
     function toggle() {
         if (!folder) { configure(); return }
         if (control.running) return

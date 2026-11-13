@@ -36,8 +36,9 @@ Ui.BarWidget {
             else root.opened = !root.opened
         }
     }
-    Ui.PopupCard {
+    Ui.KeyboardPanel {
         id: popup
+        focusTarget: minutesInput
         anchorItem: button
         bar: root.bar
         owner: root
@@ -58,12 +59,27 @@ Ui.BarWidget {
             Text {
                 width: parent.width
                 textFormat: Text.PlainText
-                text: root.service?.error || (root.service?.folder
-                      ? root.service.folder + "\nEvery " + root.service.minutes + " min · "
-                        + (root.service.paused ? "Paused" : "Playing")
-                        + (root.service.count < 2 ? "\nAdd more images for different wallpapers." : "")
-                      : "Choose an image folder to start.")
-                wrapMode: Text.WrapAnywhere
+                text: root.service?.error || root.service?.folder || "Choose an image folder to start."
+                elide: Text.ElideMiddle
+                color: root.bar.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+            }
+            Text {
+                visible: !!root.service?.folder && !root.service?.error
+                textFormat: Text.PlainText
+                text: (root.service?.paused ? "Paused" : "Playing") + " · Every "
+                      + (root.service?.minutes || 5) + (root.service?.minutes === 1 ? " minute" : " minutes")
+                color: root.bar.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+            }
+            Text {
+                width: parent.width
+                visible: !!root.service?.folder && root.service?.count < 2
+                textFormat: Text.PlainText
+                text: "Add more images for different wallpapers."
+                wrapMode: Text.WordWrap
                 color: root.bar.foreground
                 font.family: Style.font.family
                 font.pixelSize: Style.font.bodySmall
@@ -72,6 +88,24 @@ Ui.BarWidget {
                 text: "Choose folder…"
                 foreground: root.bar.foreground
                 onClicked: { root.opened = false; root.service?.configure() }
+            }
+            Text {
+                text: "Minutes between wallpapers (1–1440)"
+                textFormat: Text.PlainText
+                color: root.bar.foreground
+                font.family: Style.font.family
+                font.pixelSize: Style.font.bodySmall
+            }
+            Ui.TextField {
+                id: minutesInput
+                width: parent.width
+                text: String(root.service?.minutes || 5)
+                foreground: root.bar.foreground
+                validator: IntValidator { bottom: 1; top: 1440 }
+                inputMethodHints: Qt.ImhDigitsOnly
+                onEditingFinished: {
+                    if (acceptableInput) root.service?.setMinutes(Number(text))
+                }
             }
             Text {
                 text: "Wallpaper fitting"

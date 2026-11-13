@@ -95,6 +95,24 @@ class SlideshowTests(unittest.TestCase):
         with patch.object(slideshow.subprocess, 'run', side_effect=FileNotFoundError), contextlib.redirect_stderr(io.StringIO()):
             slideshow.report_error(error)
 
+    def test_interval_preserves_other_settings_and_rejects_invalid_values(self):
+        slideshow.save({'folder': '/wallpapers', 'paused': True, 'fit': 'vertical'})
+        self.run_action('interval', '--minutes', '1440')
+        self.assertEqual(slideshow.load(), {'folder': '/wallpapers', 'paused': True,
+                                          'fit': 'vertical', 'minutes': 1440})
+        before = slideshow.CONFIG.read_bytes()
+        for value in ['0', '1441']:
+            with self.assertRaises(ValueError):
+                self.run_action('interval', '--minutes', value)
+            self.assertEqual(slideshow.CONFIG.read_bytes(), before)
+
+    def test_cancelled_folder_picker_preserves_config(self):
+        slideshow.save({'folder': '/wallpapers', 'minutes': 7})
+        before = slideshow.CONFIG.read_bytes()
+        with patch.object(slideshow, 'choose_folder', return_value=None):
+            self.run_action('configure')
+        self.assertEqual(slideshow.CONFIG.read_bytes(), before)
+
     def test_missing_and_empty_folders(self):
         with self.assertRaises(ValueError):
             self.run_action('next')

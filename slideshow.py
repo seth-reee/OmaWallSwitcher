@@ -48,14 +48,44 @@ def save(config):
             os.unlink(temporary)
 
 
-def dialog(*args):
-    result = subprocess.run(['zenity', *args], capture_output=True, text=True)
-    return result.stdout.rstrip('\n') if result.returncode == 0 else None
+def choose_folder():
+    from gi.repository import Gio, GLib
+    from urllib.parse import unquote, urlparse
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    loop = GLib.MainLoop()
+    result = []
+    token = 'omawall' + str(os.getpid())
+    sender = bus.get_unique_name().lstrip(':').replace('.', '_')
+    request = '/org/freedesktop/portal/desktop/request/' + sender + '/' + token
+
+    def response(connection, sender, path, interface, signal, parameters):
+        code, values = parameters.unpack()
+        if code == 0 and values.get('uris'):
+            uri = urlparse(values['uris'][0])
+            if uri.scheme == 'file' and uri.netloc in ('', 'localhost'):
+                result.append(unquote(uri.path))
+        loop.quit()
+
+    subscription = bus.signal_subscribe(
+        'org.freedesktop.portal.Desktop', 'org.freedesktop.portal.Request',
+        'Response', request, None, Gio.DBusSignalFlags.NONE, response)
+    try:
+        bus.call_sync('org.freedesktop.portal.Desktop', '/org/freedesktop/portal/desktop',
+                      'org.freedesktop.portal.FileChooser', 'OpenFile',
+                      GLib.Variant('(ssa{sv})', ('', 'Wallpaper folder', {
+                          'handle_token': GLib.Variant('s', token),
+                          'directory': GLib.Variant('b', True),
+                          'multiple': GLib.Variant('b', False)})),
+                      None, Gio.DBusCallFlags.NONE, -1, None)
+        loop.run()
+    finally:
+        bus.signal_unsubscribe(subscription)
+    return result[0] if result else None
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['configure', 'next', 'toggle', 'fit', 'lock-screen'])
+    parser.add_argument('action', choices=['configure', 'interval', 'next', 'toggle', 'fit', 'lock-screen'])
     parser.add_argument('--enabled', choices=['true', 'false'])
     parser.add_argument('--fit', choices=FIT_MODES)
     parser.add_argument('--folder')
@@ -67,22 +97,21 @@ def main():
     if args.action == 'configure':
         folder = args.folder
         if folder is None:
-            folder = dialog('--file-selection', '--directory', '--title=Wallpaper folder',
-                            '--filename=' + (config.get('folder') or str(Path.home())) + '/')
+            folder = choose_folder()
             if folder is None:
                 return
         images(folder)
         minutes = args.minutes
         if minutes is None:
-            value = dialog('--entry', '--title=OmaWallSwitcher',
-                           '--text=Minutes between wallpapers (1–1440)',
-                           '--entry-text=' + str(config.get('minutes', 5)))
-            if value is None:
-                return
-            minutes = int(value)
+            minutes = config.get('minutes', 5)
         if not 1 <= minutes <= 1440:
             raise ValueError('Interval must be between 1 and 1440 minutes.')
         config.update({'folder': str(Path(folder).expanduser().resolve()), 'minutes': minutes, 'paused': False})
+        save(config)
+    elif args.action == 'interval':
+        if args.minutes is None or not 1 <= args.minutes <= 1440:
+            raise ValueError('Interval must be between 1 and 1440 minutes.')
+        config['minutes'] = args.minutes
         save(config)
     elif args.action == 'lock-screen':
         if args.enabled is None:

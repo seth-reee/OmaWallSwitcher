@@ -8,15 +8,18 @@ transitions.
 
 ## Install
 
-Requires Omarchy's Quickshell-based shell, Python 3, and `zenity` for the folder
-and interval dialogs.
+Uses Omarchy's bundled Quickshell, Python 3, Python GObject bindings, and
+XDG desktop portal. No additional dialog package or manual setup is required.
+Folder selection uses your system's configured file chooser.
 
 ```sh
 omarchy plugin add https://github.com/seth-reee/OmaWallSwitcher.git --enable
 ```
 
 Choose the `right` bar section when prompted. Click the wallpaper icon, then
-**Choose folder…** to select your images and rotation interval (default: five minutes).
+**Choose folder…** to select your images. Type the rotation interval in
+**Minutes between wallpapers** (1–1440, default: five minutes). Press Enter or
+leave the field to save.
 
 Images cycle in filename order. Add images directly to the selected folder;
 subfolders are not included. Supported formats are JPG, JPEG, PNG, WebP, BMP,
@@ -28,11 +31,12 @@ and AVIF, depending on your installed Qt image plugins.
 | --- | --- |
 | Left-click the bar icon | Open slideshow controls |
 | Middle-click the bar icon | Pause or resume |
-| Right-click the bar icon | Choose folder and interval |
+| Right-click the bar icon | Open the system folder picker |
 | Double-left-click empty desktop | Next image on all monitors, even while paused |
 | Double-right-click empty desktop | Open Omarchy's theme selector |
 
-The popup includes folder selection, pause/resume, next image, and four fitting modes:
+The popup includes folder selection, an editable rotation interval, pause/resume,
+next image, and four fitting modes:
 
 | Fitting | Behavior |
 | --- | --- |
