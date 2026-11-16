@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('slideshow', ROOT / 'slideshow.py')
 slideshow = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(slideshow)
+original_ensure_lock_bridge = slideshow.ensure_lock_bridge
 
 
 class SlideshowTests(unittest.TestCase):
@@ -26,10 +27,38 @@ class SlideshowTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_action('lock-screen')
 
+    def test_bridge_restart_only_when_installed(self):
+        # Exercise the real helper while keeping all filesystem and process effects mocked.
+        with patch.object(slideshow.runpy, 'run_path') as module, \
+                patch.object(slideshow.subprocess, 'run') as run, \
+                patch.object(slideshow.shutil, 'which', return_value='/usr/bin/omarchy'):
+            install = module.return_value.__getitem__.return_value
+            install.return_value = False
+            original_ensure_lock_bridge()
+            run.assert_not_called()
+            install.return_value = True
+            original_ensure_lock_bridge()
+            command = run.call_args.args[0]
+            self.assertEqual(command[:2], ['systemd-run', '--user'])
+            self.assertIn('--on-active=2s', command)
+            self.assertEqual(command[-3:], ['/usr/bin/omarchy', 'restart', 'shell'])
+
+    def test_failed_bridge_install_does_not_enable_setting(self):
+        slideshow.save({'lockScreenSupport': False})
+        self.ensure_bridge.side_effect = ValueError('Unsupported Lock Explorer version')
+        with self.assertRaises(ValueError):
+            self.run_action('lock-screen', '--enabled', 'true')
+        self.assertFalse(slideshow.load()['lockScreenSupport'])
+        self.run_action('lock-screen', '--enabled', 'false')
+        self.assertEqual(self.ensure_bridge.call_count, 1)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.folder = Path(self.temporary.name)
+        bridge_patch = patch.object(slideshow, 'ensure_lock_bridge')
+        self.ensure_bridge = bridge_patch.start()
+        self.addCleanup(bridge_patch.stop)
         config_patch = patch.object(slideshow, 'CONFIG', self.folder / 'settings.json')
         config_patch.start()
         self.addCleanup(config_patch.stop)

@@ -22,7 +22,10 @@ Item {
         lockWallpapers.setText(JSON.stringify({version: 1, updated: Date.now(), monitors: monitors}))
     }
     onDisplayedWallpapersChanged: publishLockWallpapers()
-    onLockScreenSupportChanged: publishLockWallpapers()
+    onLockScreenSupportChanged: {
+        publishLockWallpapers()
+        if (lockScreenSupport && !bridgeCheck.running) bridgeCheck.running = true
+    }
     onFolderChanged: publishLockWallpapers()
     FileView {
         id: lockWallpapers
@@ -133,7 +136,21 @@ Item {
         stderr: StdioCollector { onStreamFinished: if (text.trim()) root.error = text.trim() }
         onExited: function(code) { if (code !== 0 && !root.error) root.error = "Could not set wallpaper" }
     }
-    Process { id: control; onExited: root.reloadConfig() }
+    property string bridgeError: ""
+    Process {
+        id: bridgeCheck
+        command: ["python3", root.helper, "ensure-lock-bridge"]
+        stderr: StdioCollector { onStreamFinished: root.bridgeError = text.trim() }
+        onExited: function(code) {
+            if (code !== 0) root.bridgeError = root.bridgeError || "Could not install Lock Explorer bridge"
+            else root.bridgeError = ""
+        }
+    }
+    Process {
+        id: control
+        stderr: StdioCollector { onStreamFinished: root.bridgeError = text.trim() }
+        onExited: root.reloadConfig()
+    }
     Connections {
         target: Quickshell
         function onScreensChanged() { if (root.folder) root.next() }
@@ -182,7 +199,8 @@ Item {
         function setLockScreenSupport(enabled: bool): void { root.setLockScreenSupport(enabled) }
         function status(): string {
             return JSON.stringify({folder: root.folder, minutes: root.minutes, paused: root.paused,
-                                   fit: root.fit, wallpapers: root.wallpapers, count: root.count, error: root.error})
+                                   fit: root.fit, wallpapers: root.wallpapers, count: root.count, error: root.error,
+                                   lockScreenSupport: root.lockScreenSupport, bridgeError: root.bridgeError})
         }
     }
 }

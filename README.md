@@ -55,25 +55,47 @@ With [Lock Explorer](https://github.com/SirJul1337/omarchy-lock-explorer), each
 monitor's lock screen can show its current slideshow wallpaper, including during
 the unlock fade.
 
-After installing both plugins, install the compatibility bridge:
+After installing both plugins, turn on **Lock Explorer wallpapers** in the
+OmaWallSwitcher popup. This option is off by default. No manual bridge command
+is needed.
 
-```sh
-python3 ~/.config/omarchy/plugins/seth.wallpaper-slideshow/integrations/lock-explorer.py
-omarchy restart shell
-```
+### How the bridge works
 
-Then turn on **Lock Explorer wallpapers** in the OmaWallSwitcher popup.
-This option is off by default. Without it, the lock screen uses the normal theme
-wallpaper.
+- Enabling the option checks Lock Explorer's installed `Service.qml` and adds
+  the wallpaper bridge if it is missing. The same check runs when OmaWallSwitcher
+  starts with this option enabled. Lock Explorer must already be installed.
+- Before patching, the installer verifies the expected integration points and
+  backs up the original file as `Service.qml.before-omawallswitcher` beside it.
+  Later installations preserve existing backups and create a separate backup.
+  Unsupported layouts produce an error without changing Lock Explorer or enabling
+  a previously disabled option. The bridge changes wallpaper sources; it does
+  not change password handling or authentication.
+- When a bridge is installed, OmaWallSwitcher schedules a shell restart after
+  two seconds. A full restart is needed because Omarchy keeps the lock service
+  loaded across plugin rescans. The bar briefly reloads. Omarchy refuses this
+  restart while the session is securely locked; unlock and run
+  `omarchy restart shell` if installation happened while locked.
+- OmaWallSwitcher publishes the image actually displayed on each monitor to
+  `$XDG_RUNTIME_DIR/omawallswitcher-lock-wallpapers.json`. It refreshes this local
+  state when wallpapers change and every 30 seconds. Lock Explorer watches the
+  file and uses the matching monitor's path for the lock screen, full-screen
+  preview, and unlock background.
+- If a monitor has no slideshow image, sharing is disabled, or the state is more
+  than 90 seconds old, Lock Explorer falls back to its normal theme wallpaper.
+  This prevents a stopped or removed slideshow from leaving a stale lock image.
 
 Lock Explorer keeps its own cropping, blur, and dim settings. Designs without a
-wallpaper stay as designed. If a slideshow wallpaper is unavailable, the lock
-screen falls back to the theme wallpaper.
+wallpaper stay as designed. The bridge shares images, not slideshow fitting modes.
 
-The bridge backs up Lock Explorer's `Service.qml` as
-`Service.qml.before-omawallswitcher`. Lock Explorer updates may overwrite the
-bridge. After updating, move the old backup out of the plugin folder and rerun
-the command above. To stop using slideshow wallpapers, turn off the option.
+If a Lock Explorer update removes the bridge, toggle **Lock Explorer wallpapers**
+off and on to reinstall it, or restart the shell with the option enabled. An
+already installed bridge is left alone and does not trigger another restart.
+Installation errors appear in the OmaWallSwitcher popup.
+
+To stop sharing, turn off the option. The bridge can remain installed and will
+fall back to the theme wallpaper. Backups remain beside Lock Explorer's
+`Service.qml`; restoring one manually should only be done against the matching
+Lock Explorer version.
 
 ## Update or remove
 

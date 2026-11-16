@@ -59,7 +59,7 @@ Ui.BarWidget {
             Text {
                 width: parent.width
                 textFormat: Text.PlainText
-                text: root.service?.error || root.service?.folder || "Choose an image folder to start."
+                text: root.service?.bridgeError || root.service?.error || root.service?.folder || "Choose an image folder to start."
                 elide: Text.ElideMiddle
                 color: root.bar.foreground
                 font.family: Style.font.family

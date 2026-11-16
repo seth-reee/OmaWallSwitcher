@@ -4,6 +4,8 @@ import argparse
 import html
 import json
 import os
+import runpy
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -83,9 +85,23 @@ def choose_folder():
     return result[0] if result else None
 
 
+def ensure_lock_bridge():
+    bridge = runpy.run_path(str(Path(__file__).resolve().parent / 'integrations/lock-explorer.py'))
+    directory = Path.home() / '.config/omarchy/plugins/io.github.sirjul1337.lock-explorer'
+    if bridge['install'](directory):
+        # Run outside the shell's process tree, after the setting is saved.
+        # Authentication services survive plugin rescans.
+        command = shutil.which('omarchy')
+        if not command:
+            raise ValueError('Bridge installed. Restart the Omarchy shell to activate it.')
+        subprocess.run(['systemd-run', '--user', '--collect', '--quiet',
+                        '--on-active=2s', command, 'restart', 'shell'], check=True,
+                       capture_output=True, text=True, timeout=15)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['configure', 'interval', 'next', 'toggle', 'fit', 'lock-screen'])
+    parser.add_argument('action', choices=['configure', 'interval', 'next', 'toggle', 'fit', 'lock-screen', 'ensure-lock-bridge'])
     parser.add_argument('--enabled', choices=['true', 'false'])
     parser.add_argument('--fit', choices=FIT_MODES)
     parser.add_argument('--folder')
@@ -94,7 +110,9 @@ def main():
     parser.add_argument('--screens', type=int, default=1)
     args = parser.parse_args()
     config = load()
-    if args.action == 'configure':
+    if args.action == 'ensure-lock-bridge':
+        ensure_lock_bridge()
+    elif args.action == 'configure':
         folder = args.folder
         if folder is None:
             folder = choose_folder()
@@ -116,6 +134,8 @@ def main():
     elif args.action == 'lock-screen':
         if args.enabled is None:
             raise ValueError('Choose true or false with --enabled.')
+        if args.enabled == 'true':
+            ensure_lock_bridge()
         config['lockScreenSupport'] = args.enabled == 'true'
         save(config)
     elif args.action == 'fit':

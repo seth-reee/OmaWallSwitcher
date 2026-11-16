@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Install the optional wallpaper bridge without changing authentication code."""
 import argparse
+import os
 from pathlib import Path
 import shutil
+import tempfile
 
 MARKER = '  // OmaWallSwitcher optional per-monitor wallpapers.'
 BRIDGE = '''  // OmaWallSwitcher optional per-monitor wallpapers.
@@ -67,23 +69,32 @@ def patched(source):
     return source
 
 
+def install(directory):
+    path = directory / 'Service.qml'
+    if not path.is_file():
+        raise ValueError('Install Lock Explorer before enabling its wallpapers.')
+    original = path.read_text()
+    result = patched(original)
+    if result == original:
+        return False
+    backup = path.with_name('Service.qml.before-omawallswitcher')
+    if backup.exists():
+        # Keep every earlier backup when a plugin update replaces the bridge.
+        fd, name = tempfile.mkstemp(prefix=backup.name + '.', dir=directory)
+        os.close(fd)
+        backup = Path(name)
+    shutil.copy2(path, backup)
+    path.write_text(result)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory', nargs='?', type=Path,
                         default=Path.home() / '.config/omarchy/plugins/io.github.sirjul1337.lock-explorer')
     args = parser.parse_args()
-    path = args.directory / 'Service.qml'
-    original = path.read_text()
-    result = patched(original)
-    if result == original:
-        print('Lock Explorer bridge already installed.')
-        return
-    backup = path.with_name('Service.qml.before-omawallswitcher')
-    if backup.exists():
-        raise SystemExit('Existing backup found; inspect it before applying to a new plugin version: ' + str(backup))
-    shutil.copy2(path, backup)
-    path.write_text(result)
-    print('Installed Lock Explorer bridge; backup: ' + str(backup))
+    changed = install(args.directory)
+    print('Installed Lock Explorer bridge.' if changed else 'Lock Explorer bridge already installed.')
 
 
 if __name__ == '__main__':

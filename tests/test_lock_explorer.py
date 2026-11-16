@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('bridge', ROOT / 'integrations/lock-explorer.py')
@@ -30,3 +31,34 @@ class BridgeTests(unittest.TestCase):
     def test_ambiguous_version_is_rejected(self):
         with self.assertRaises(ValueError):
             bridge.patched('  property var shell: null\n' * 2)
+
+    def test_install_preserves_old_backups_and_is_idempotent(self):
+        source = ('  property var shell: null\n'
+                  'backgroundUrl: root.locked && !root.sessionLockXray ? root.backgroundUrl : ""\n'
+                  '          backgroundPath: root.backgroundPath\n'
+                  '        backgroundPath: root.backgroundPath\n')
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / 'Service.qml'
+            path.write_text(source)
+            backup = directory / 'Service.qml.before-omawallswitcher'
+            backup.write_text('earlier version')
+            self.assertTrue(bridge.install(directory))
+            self.assertEqual(backup.read_text(), 'earlier version')
+            backups = list(directory.glob('Service.qml.before-omawallswitcher.*'))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_text(), source)
+            self.assertFalse(bridge.install(directory))
+            self.assertEqual(len(list(directory.glob('Service.qml.before-omawallswitcher*'))), 2)
+
+    def test_missing_and_unsupported_install_leave_files_unchanged(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            with self.assertRaisesRegex(ValueError, 'Install Lock Explorer'):
+                bridge.install(directory)
+            path = directory / 'Service.qml'
+            path.write_text('unsupported layout')
+            with self.assertRaises(ValueError):
+                bridge.install(directory)
+            self.assertEqual(path.read_text(), 'unsupported layout')
+            self.assertEqual(list(directory.iterdir()), [path])
